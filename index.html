@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>N-back ｜ 頭を使うのは、しんどい</title>
+<style>
+  :root{
+    --navy:#1E2148; --navy2:#3A3D63; --red:#FF5A4C; --teal:#0FA3A0;
+    --muted:#B9BEDA; --card:#F3F4FB; --pink:#FFF1EF; --gray:#6B6F8A;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  body{
+    font-family:"Meiryo","Hiragino Kaku Gothic ProN","Yu Gothic",sans-serif;
+    background:#fff;color:var(--navy);min-height:100vh;
+    display:flex;justify-content:center;padding:20px 16px 40px;
+  }
+  .stage{width:min(880px,100%)}
+  section{display:none}
+  section.show{display:block}
+
+  .eyebrow{color:var(--red);font-weight:700;font-size:13px;letter-spacing:.04em;margin-bottom:6px}
+  h1{font-size:clamp(21px,4.6vw,32px);line-height:1.4;margin-bottom:10px}
+  h1 .hl{color:var(--red)}
+  .lead{color:var(--gray);font-size:14px;line-height:1.8}
+  .lead b{color:var(--navy)}
+
+  button{font-family:inherit;cursor:pointer;border:none;font-weight:700;
+         transition:transform .08s ease,background .15s ease,border-color .15s ease}
+  button:active{transform:translateY(1px)}
+  button:focus-visible{outline:3px solid var(--teal);outline-offset:3px}
+  .btn{background:var(--navy);color:#fff;border-radius:999px;padding:13px 24px;font-size:15px}
+  .btn.red{background:var(--red)}
+  .btn.ghost{background:#fff;color:var(--navy);border:2px solid var(--muted)}
+  .foot{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}
+
+  /* ---------- tempo ---------- */
+  .tempo{display:flex;align-items:center;gap:8px;margin:0 0 12px;flex-wrap:wrap}
+  .tlab{color:var(--gray);font-size:12px;font-weight:700}
+  .tbtn{background:#fff;border:2px solid var(--muted);color:var(--navy2);
+        border-radius:10px;padding:8px 18px;font-size:13px}
+  .tbtn.on{border-color:var(--red);background:var(--pink);color:var(--navy)}
+
+  /* ---------- home menu ---------- */
+  .menu{display:flex;gap:14px;flex-wrap:wrap;margin-top:18px}
+  .box{flex:1 1 300px;background:var(--card);border-radius:16px;padding:20px}
+  .box .k{font-size:18px;font-weight:700;margin-bottom:4px}
+  .box .k .tag{font-size:11px;font-weight:700;color:#fff;background:var(--navy2);
+               border-radius:999px;padding:3px 9px;margin-left:8px;vertical-align:2px}
+  .box .k .tag.hot{background:var(--red)}
+  .box .d{color:var(--gray);font-size:13px;line-height:1.7;margin-bottom:14px}
+  .box .d b{color:var(--navy)}
+  .picks{display:flex;gap:8px}
+  .pick{flex:1;background:#fff;border:2px solid var(--muted);border-radius:12px;
+        padding:12px 6px;color:var(--navy);font-family:"Courier New",monospace;font-size:17px}
+  .pick:hover{border-color:var(--navy2)}
+  .pick small{display:block;font-family:inherit;font-size:11px;color:var(--gray);
+              font-weight:400;margin-top:3px}
+
+  /* ---------- practice animation ---------- */
+  .switch{display:flex;gap:8px;margin:16px 0 18px}
+  .sw{background:#fff;border:2px solid var(--muted);color:var(--navy2);
+      border-radius:999px;padding:9px 18px;font-size:14px}
+  .sw.on{background:var(--navy);border-color:var(--navy);color:#fff}
+
+  .anim{background:var(--card);border-radius:16px;padding:18px 14px}
+  .cap{color:var(--gray);font-size:12px;text-align:center;margin-bottom:6px}
+  .nowbox{height:104px;display:flex;align-items:center;justify-content:center;
+          font-family:"Courier New",monospace;font-size:64px;font-weight:700;color:var(--navy2);
+          transition:opacity .3s ease,transform .3s ease,color .2s ease}
+  .nowbox.in{animation:drop .45s ease}
+  .nowbox.match{color:var(--red)}
+  .nowbox.out{opacity:0}
+  @keyframes drop{from{opacity:0;transform:translateY(-22px)}to{opacity:1;transform:none}}
+
+  .verdict{min-height:52px;text-align:center;font-size:14px;line-height:1.6;color:var(--navy2);
+           padding:0 4px;display:flex;align-items:center;justify-content:center}
+  .verdict b{color:var(--red)}
+
+  .memcap{color:var(--gray);font-size:12px;text-align:center;margin:8px 0 6px}
+  .memcap b{color:var(--navy)}
+  .memrow{display:flex;gap:5px;justify-content:center;align-items:center}
+  .mbox{width:46px;height:58px;border-radius:10px;background:#fff;
+        border:2px solid var(--muted);position:relative;flex:none;
+        display:flex;align-items:center;justify-content:center;
+        font-family:"Courier New",monospace;font-size:24px;font-weight:700;color:var(--navy2);
+        transition:border-color .2s ease,background .2s ease,color .2s ease}
+  .mbox.empty{border-style:dashed;background:transparent}
+  .mbox.cmp{border-color:var(--red);background:var(--pink);color:var(--red)}
+  .mbox.pop{animation:pop .4s ease}
+  @keyframes pop{from{transform:scale(.6);opacity:0}to{transform:none;opacity:1}}
+  .mbox .tag{position:absolute;bottom:-19px;left:0;right:0;text-align:center;
+             font-size:11px;font-weight:700;color:var(--red);font-family:inherit}
+  /* 左端＝出ていく場所（ふだんは見えない） */
+  .mbox.exit{border:none;background:transparent;color:var(--gray);
+             width:38px;height:52px;font-size:20px;opacity:0}
+  .mbox.exit.show{opacity:.45}
+  .mbox.exit.gone{opacity:0;transform:translateX(-14px);transition:all .7s ease}
+  /* 右端＝入ってくる場所 */
+  .mbox.entry{border-style:dashed;background:transparent;color:var(--muted)}
+  .mbox.entry.now{border-style:solid;border-color:var(--navy2);background:#fff;color:var(--navy2)}
+  .arrow{color:var(--muted);font-size:13px;font-weight:700;flex:none}
+  .rowlab{display:flex;justify-content:center;gap:10px;color:var(--gray);
+          font-size:11px;margin-top:24px}
+  @media (max-width:400px){
+    .mbox{width:42px;height:54px;font-size:22px}
+    .mbox.exit{width:34px}
+  }
+  .pressgh{margin:12px auto 0;width:min(280px,100%);height:52px;border-radius:999px;
+           background:#fff;border:2px solid var(--muted);color:var(--muted);
+           display:flex;align-items:center;justify-content:center;
+           font-size:17px;font-weight:700;transition:all .18s ease}
+  .pressgh.on{background:var(--red);border-color:var(--red);color:#fff;transform:scale(1.04)}
+
+  /* ---------- run ---------- */
+  .taskbar{display:flex;justify-content:space-between;align-items:center;
+           color:var(--gray);font-size:13px;margin-bottom:8px}
+  .taskbar b{color:var(--navy)}
+  .letterbox{height:min(40vh,260px);display:flex;align-items:center;justify-content:center;
+             background:var(--card);border-radius:16px;margin-bottom:16px}
+  .letter{font-family:"Courier New",monospace;font-size:clamp(86px,20vw,150px);
+          font-weight:700;color:var(--navy);line-height:1}
+  .letter.gone{opacity:0}
+  .count{font-family:"Courier New",monospace;color:var(--muted);font-size:56px;font-weight:700}
+  .slots{display:flex;gap:8px;justify-content:center;margin-bottom:16px}
+  .slot{width:50px;height:58px;border-radius:10px;border:2px dashed var(--muted);background:#fff;
+        transition:border-color .2s ease,background .2s ease}
+  .slot.pulse{border-color:var(--red);background:var(--pink)}
+  .same{background:var(--red);color:#fff;border-radius:999px;
+        padding:18px 0;width:100%;font-size:19px;display:block}
+  .hint{color:var(--gray);font-size:12px;margin-top:10px;text-align:center}
+
+  /* ---------- result ---------- */
+  .stats{display:flex;gap:8px;margin:16px 0}
+  .stat{flex:1;background:var(--card);border-radius:12px;padding:14px 6px;text-align:center}
+  .stat .v{font-size:28px;font-weight:700;line-height:1.2}
+  .stat .k{font-size:11px;color:var(--gray);margin-top:4px}
+  .stat.good .v{color:var(--teal)} .stat.bad .v{color:var(--red)}
+  .card{background:var(--card);border-radius:14px;padding:16px}
+  .card .t{font-weight:700;font-size:14px;margin-bottom:8px}
+  .replay{display:flex;gap:5px;flex-wrap:wrap}
+  .rl{width:36px;height:42px;border-radius:8px;background:#fff;border:2px solid var(--muted);
+      display:flex;align-items:center;justify-content:center;
+      font-family:"Courier New",monospace;font-weight:700;color:var(--navy2)}
+  .rl.target{background:var(--pink);border-color:var(--red);color:var(--red)}
+  .legend{color:var(--gray);font-size:12px;margin-top:8px}
+  .legend b{color:var(--red)}
+
+  /* ---------- price ---------- */
+  .price{background:var(--pink);border-radius:16px;padding:18px;margin-top:18px}
+  .price h3{font-size:17px;margin-bottom:6px}
+  .price .q{color:var(--navy2);font-size:13px;line-height:1.7;margin-bottom:14px}
+  .deal{display:flex;gap:10px;align-items:stretch}
+  .opt{flex:1;background:#fff;border:2px solid var(--muted);border-radius:14px;
+       padding:14px 8px;text-align:center}
+  .opt .lv{font-family:"Courier New",monospace;font-size:16px;font-weight:700;color:var(--navy2)}
+  .opt .sub{font-size:11px;color:var(--gray);margin:2px 0 8px}
+  .opt .amt{font-family:"Courier New",monospace;font-size:30px;font-weight:700;color:var(--navy)}
+  .opt.var{border-color:var(--red)}
+  .opt.var .amt{color:var(--red)}
+  .vs{align-self:center;font-size:13px;font-weight:700;color:var(--gray)}
+  .slidewrap{margin-top:14px}
+  .slidewrap .sl{font-size:12px;color:var(--gray);margin-bottom:2px}
+  input[type=range]{width:100%;accent-color:var(--red);margin:6px 0}
+  .ex{background:#fff;border-radius:12px;padding:12px 14px;margin-top:12px;
+      font-size:12.5px;line-height:1.8;color:var(--navy2)}
+  .ex .h{font-weight:700;font-size:12px;color:var(--gray);margin-bottom:4px}
+  .ex b{color:var(--red)}
+  #reveal{display:none;margin-top:14px;padding-top:14px;border-top:1px solid var(--muted);
+          color:var(--navy2);font-size:14px;line-height:1.9}
+  #reveal b{color:var(--red)}
+  #reveal .note{color:var(--gray);font-size:11.5px;line-height:1.7;display:block;margin-top:8px}
+
+  .src{color:var(--gray);font-size:11px;margin-top:22px;line-height:1.7}
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="stage">
+
+<!-- ==================== HOME ==================== -->
+<section id="home" class="show">
+  <div class="eyebrow">Westbrook, Kester &amp; Braver (2013)</div>
+  <h1>文字が1つずつ出ます。<span class="hl">N個前と同じなら押す。</span></h1>
+  <p class="lead">
+    前に出た文字は消えます。メモも取れません。<b>頭の中だけ</b>で覚えて、更新して、比べる。<br>
+    まずは <b>1-back（1個前）</b> に挑戦してみよう。
+  </p>
+
+  <div class="menu">
+    <div class="box">
+      <div class="k">練習<span class="tag">採点なし・ゆっくり</span></div>
+      <div class="d">文字の流れを見てから、本番へ。</div>
+      <div class="picks">
+        <button class="pick" data-mode="practice" data-n="1">1-back<small>1個前</small></button>
+        <button class="pick" data-mode="practice" data-n="4">4-back<small>4個前</small></button>
+      </div>
+    </div>
+
+    <div class="box">
+      <div class="k">本番<span class="tag hot">採点あり</span></div>
+      <div class="d">毎回ちがう並び。<b>「何円もらえるならやりたいか」</b>を最後に聞きます。</div>
+      <div class="tempo">
+        <span class="tlab">テンポ</span>
+        <button class="tbtn on" data-t="fast">はやい</button>
+        <button class="tbtn" data-t="slow">おそい</button>
+      </div>
+      <div class="picks">
+        <button class="pick" data-mode="real" data-n="1">1-back<small>1個前</small></button>
+        <button class="pick" data-mode="real" data-n="4">4-back<small>4個前</small></button>
+      </div>
+    </div>
+  </div>
+
+  <p class="src">
+    Westbrook A, Kester D, Braver TS (2013) What Is the Subjective Cost of Cognitive Effort?
+    PLoS ONE 8(7): e68210. の N-back 課題をもとにした簡易版。
+  </p>
+</section>
+
+<!-- ==================== PRACTICE (アニメ) ==================== -->
+<section id="practice">
+  <div class="eyebrow">練習</div>
+  <h1 id="pTitle">1-back ： <span class="hl">1個前</span>と同じなら押す</h1>
+
+  <div class="switch">
+    <button class="sw on" data-n="1">1-back</button>
+    <button class="sw" data-n="4">4-back</button>
+  </div>
+
+  <div class="anim">
+    <div class="cap">いま出た文字</div>
+    <div class="nowbox" id="nowBox"></div>
+    <div class="verdict" id="verdict"></div>
+    <div class="memcap" id="memcap"></div>
+    <div class="memrow" id="memRow"></div>
+    <div class="rowlab" id="rowlab"><span>← 古い</span><span>新しい →</span></div>
+    <div class="pressgh" id="pressGhost">押す</div>
+  </div>
+
+  <p class="legend" style="margin-top:12px">
+    本番では、この箱は<b>見えません</b>。ぜんぶ頭の中だけでやります。
+  </p>
+
+  <div class="foot">
+    <button class="btn red" id="pGo">本番へ</button>
+    <button class="btn ghost" id="pBack">もどる</button>
+  </div>
+</section>
+
+<!-- ==================== RUN ==================== -->
+<section id="run">
+  <div class="taskbar">
+    <div><b id="modeLabel">4-back</b> ・ <span id="progress">0 / 12</span></div>
+    <div id="ruleLabel">4個前と同じなら押す</div>
+  </div>
+
+  <div class="letterbox">
+    <div class="letter" id="letter"></div>
+    <div class="count" id="count" style="display:none"></div>
+  </div>
+
+  <div class="cap" id="slotcap" style="margin-bottom:8px"></div>
+  <div class="slots" id="slots"></div>
+
+  <button class="same" id="sameBtn">同じ！（タップ / スペース）</button>
+  <p class="hint">ちがうときは、何も押さない</p>
+</section>
+
+<!-- ==================== RESULT ==================== -->
+<section id="result">
+  <div class="eyebrow" id="rEyebrow">本番</div>
+  <h1 id="rTitle">4-back の結果</h1>
+
+  <div class="stats" id="statBox">
+    <div class="stat good"><div class="v" id="sHit">0</div><div class="k">見つけた</div></div>
+    <div class="stat bad"><div class="v" id="sMiss">0</div><div class="k">見逃した</div></div>
+    <div class="stat bad"><div class="v" id="sFa">0</div><div class="k">お手つき</div></div>
+  </div>
+
+  <div class="card">
+    <div class="t">出てきた文字</div>
+    <div class="replay" id="replay"></div>
+    <p class="legend"><b>赤い枠</b> ＝ ここで押すはずやった。</p>
+  </div>
+
+  <!-- ---- cognitive effort discounting ---- -->
+  <div class="price" id="priceBox">
+    <h3>もう一回やるなら、いくらほしい？</h3>
+    <p class="q">
+      実験の参加者も、これを本当に聞かれました。<br>
+      下の2枚、<b>どっちを選びますか。</b>
+    </p>
+
+    <div class="deal">
+      <div class="opt">
+        <div class="lv">4-back</div>
+        <div class="sub">もう一回やって</div>
+        <div class="amt">300円</div>
+      </div>
+      <div class="vs">or</div>
+      <div class="opt var">
+        <div class="lv">1-back</div>
+        <div class="sub">もう一回やって</div>
+        <div class="amt"><span id="yenVal">300</span>円</div>
+      </div>
+    </div>
+
+    <div class="slidewrap">
+      <div class="sl">1-back の金額を下げていく</div>
+      <input type="range" id="slider" min="0" max="300" step="10" value="300">
+      <div class="sl">「これ以上下げるなら、4-back をやる方がマシ」で止めてください。</div>
+    </div>
+
+    <div class="ex">
+      <div class="h">例</div>
+      1-back が <b>290円</b> → ほとんど同じ額。ラクな 1-back を選ぶ。<br>
+      1-back が <b>20円</b> → さすがに安い。しんどくても 4-back で 300円。<br>
+      その<b>境目の金額</b>が、あなたにとっての「4-back のしんどさの値段」。
+    </div>
+
+    <button class="btn red" id="revealBtn" style="margin-top:14px">回答をみる</button>
+
+    <div id="reveal">
+      参加者の境目は、平均で <b>約150円</b>。<br>
+      「4-back で 300円」と「1-back で 約150円」が<b>同じ価値</b>だった、ということ。<br>
+      <b>300円のうち150円を捨ててでも、4-back はやりたくない。</b>
+      <span class="note">
+        ※ 高齢者（63〜88歳）の境目は約60円。240円を捨ててでも 4-back を避ける。<br>
+        ※ 原論文は $2.00 基準（若年成人 $0.98 / 高齢者 $0.40）。1ドル150円で換算。金額は人によって大きくちがいます。
+      </span>
+    </div>
+  </div>
+
+  <div class="foot">
+    <button class="btn ghost" id="againBtn">もう一度</button>
+    <button class="btn red" id="nextBtn" style="display:none">つづけて 4-back</button>
+    <button class="btn" id="homeBtn">選び直す</button>
+  </div>
+</section>
+
+</div>
+
+<script>
+/* =========================================================
+   共通
+   ========================================================= */
+const $ = id => document.getElementById(id);
+const SECTIONS = ["home","practice","run","result"];
+function show(id){ SECTIONS.forEach(s => $(s).classList.toggle("show", s === id)); window.scrollTo(0,0); }
+
+const TEMPO = {                       // 文字は1.5秒表示。あいだの空白だけ変える
+  fast: {show:1500, blank:1000},
+  slow: {show:1500, blank:3500}       // 原論文どおり
+};
+let tempo = "fast";
+
+const FIXED = {                       // 練習：固定の並び
+  1: ["K","P","P","R","T","M","M","Q","Q","B"],
+  4: ["K","P","R","T","K","M","B","T","M","R","B","P"]
+};
+const LETTERS = "KPRTMBDFHLNQSVWZ".split("");
+const LEN_BY_N  = {1:10, 4:12};       // 本番の長さ
+const WANT_BY_N = {1:3,  4:4};        // 押すべき回数
+
+function targetsOf(seq, n){ return seq.map((c,k) => k >= n && seq[k-n] === c); }
+
+/* =========================================================
+   練習：頭の中アニメ
+   ========================================================= */
+let aN = 1, aSeq = FIXED[1], aIdx = 0, aHeld = [], aTimers = [];
+
+function aClear(){ aTimers.forEach(clearTimeout); aTimers = []; }
+function aLater(fn, ms){ aTimers.push(setTimeout(fn, ms)); }
+
+function arrowEl(){
+  const a = document.createElement("div");
+  a.className = "arrow"; a.textContent = "◀";
+  return a;
+}
+
+/* 左端＝出ていく箱 ／ 右端＝入ってくる箱。文字は右から入って左へ流れる。 */
+function drawMem(cmpOn, nowCh, dropped){
+  const row = $("memRow");
+  row.innerHTML = "";
+
+  const ex = document.createElement("div");
+  ex.className = "mbox exit"; ex.id = "mExit";
+  if (dropped){ ex.textContent = dropped; ex.classList.add("show"); }
+  row.appendChild(ex);
+  row.appendChild(arrowEl());
+
+  for (let k = 0; k < aN; k++){
+    const b = document.createElement("div");
+    b.className = "mbox";
+    if (aHeld[k]) b.textContent = aHeld[k];
+    else b.classList.add("empty");
+    if (cmpOn && k === 0 && aHeld.length === aN){
+      b.classList.add("cmp");
+      const t = document.createElement("div");
+      t.className = "tag"; t.textContent = aN + "個前";
+      b.appendChild(t);
+    }
+    row.appendChild(b);
+  }
+
+  row.appendChild(arrowEl());
+  const en = document.createElement("div");
+  en.className = "mbox entry"; en.id = "mEntry";
+  if (nowCh){ en.textContent = nowCh; en.classList.add("now"); }
+  row.appendChild(en);
+}
+
+function aReset(n){
+  aClear();
+  aN = n; aSeq = FIXED[n]; aIdx = 0; aHeld = [];
+  document.querySelectorAll(".sw").forEach(b => b.classList.toggle("on", +b.dataset.n === n));
+  $("pTitle").innerHTML = n + "-back ： <span class='hl'>" + n + "個前</span>と同じなら押す";
+  $("memcap").innerHTML = "頭の中で持っておく分（直近 <b>" + n + "個</b>）";
+  $("rowlab").style.display = (n === 1) ? "none" : "flex";   // 1個しかないときは不要
+  $("nowBox").textContent = "";
+  $("verdict").textContent = "";
+  $("pressGhost").classList.remove("on");
+  drawMem(false, null, null);
+  aLater(aStep, 900);
+}
+
+function aStep(){
+  const ch = aSeq[aIdx % aSeq.length];
+  aIdx++;
+  const cmp = (aHeld.length === aN) ? aHeld[0] : null;
+  const isMatch = cmp === ch;
+
+  const nb = $("nowBox");
+  nb.className = "nowbox in";
+  nb.textContent = ch;
+  $("verdict").textContent = "";
+
+  drawMem(false, ch, null);                        // 右の入口に、いま出た文字
+  $("mEntry").classList.add("pop");
+
+  aLater(() => {
+    drawMem(true, ch, null);
+    $("verdict").innerHTML = cmp === null
+      ? "まだ " + aN + "個前がない。<b>覚えるだけ</b>"
+      : (isMatch
+          ? "いま出た <b>" + ch + "</b> は、" + aN + "個前の <b>" + cmp + "</b> と同じ → <b>押す</b>"
+          : aN + "個前は <b>" + cmp + "</b>。いま出たのは <b>" + ch + "</b> → ちがう");
+  }, 900);
+
+  if (isMatch){
+    aLater(() => { $("pressGhost").classList.add("on"); nb.classList.add("match"); }, 1700);
+    aLater(() => $("pressGhost").classList.remove("on"), 2900);
+  }
+
+  aLater(() => {                                   // 箱が左へ1つずれる
+    nb.classList.add("out");
+    const dropped = (aHeld.length === aN) ? aHeld.shift() : null;
+    aHeld.push(ch);
+    drawMem(false, null, dropped);                 // 入口は空に、出口に押し出された文字
+    if (dropped) requestAnimationFrame(() => $("mExit").classList.add("gone"));
+    const boxes = $("memRow").querySelectorAll(".mbox:not(.exit):not(.entry)");
+    boxes[aHeld.length - 1].classList.add("pop");
+  }, 3400);
+
+  aLater(aStep, 4400);
+}
+
+/* =========================================================
+   本番／練習プレイ
+   ========================================================= */
+let N = 4, mode = "real", seq = [], targets = [], idx = -1;
+let answered = false, hits = 0, misses = 0, fas = 0, timer = null, running = false;
+
+function makeSequence(n){
+  const LEN = LEN_BY_N[n];
+  const s = [], t = [];
+  let want = WANT_BY_N[n];
+  for (let i = 0; i < LEN; i++){
+    const canTarget = i >= n;
+    const roll = Math.random();
+    if (canTarget && want > 0 && roll < 0.42){          // ターゲット
+      s.push(s[i-n]); t.push(true); want--;
+    } else if (i >= n+1 && roll < 0.62){                // ルアー（n+1個前と同じ）
+      s.push(s[i-n-1]); t.push(false);
+    } else {
+      let c, guard = 0;
+      do { c = LETTERS[Math.floor(Math.random()*LETTERS.length)]; guard++; }
+      while (canTarget && c === s[i-n] && guard < 30);
+      s.push(c); t.push(false);
+    }
+  }
+  return { s, t };
+}
+
+function drawSlots(){
+  const box = $("slots");
+  box.innerHTML = "";
+  for (let k = 0; k < N; k++){
+    const d = document.createElement("div");
+    d.className = "slot";
+    box.appendChild(d);
+  }
+}
+function pulseSlots(){
+  [...$("slots").children].forEach((d,k) => {
+    setTimeout(() => { d.classList.add("pulse"); setTimeout(() => d.classList.remove("pulse"), 220); }, k*50);
+  });
+}
+
+function startRun(n, m){
+  aClear();
+  N = n; mode = m;
+  if (m === "practice"){ seq = FIXED[n].slice(); }
+  else { const g = makeSequence(n); seq = g.s; }
+  targets = targetsOf(seq, n);
+  idx = -1; hits = misses = fas = 0; running = true; answered = false;
+
+  $("modeLabel").textContent = n + "-back";
+  $("ruleLabel").textContent = n + "個前と同じなら押す";
+  $("progress").textContent = "0 / " + seq.length;
+  $("slotcap").textContent = "頭の中で持っておく分（" + n + "個）";
+  $("letter").style.color = "var(--navy)";
+  drawSlots();
+
+  show("run");
+  countdown(3);
+}
+
+function countdown(k){
+  $("letter").style.display = "none";
+  $("count").style.display = "block";
+  $("count").textContent = k > 0 ? k : "";
+  if (k > 0) timer = setTimeout(() => countdown(k-1), 800);
+  else {
+    $("count").style.display = "none";
+    $("letter").style.display = "block";
+    next();
+  }
+}
+
+function next(){
+  idx++;
+  if (idx >= seq.length){ finish(); return; }
+  answered = false;
+  $("progress").textContent = (idx+1) + " / " + seq.length;
+  $("letter").textContent = seq[idx];
+  $("letter").classList.remove("gone");
+  pulseSlots();
+
+  timer = setTimeout(() => {                 // 1.5秒で消える
+    $("letter").classList.add("gone");
+    if (!answered && targets[idx]) misses++;
+    timer = setTimeout(next, TEMPO[tempo].blank);
+  }, TEMPO[tempo].show);
+}
+
+function respond(){
+  if (!running || answered || idx < 0 || idx >= seq.length) return;
+  if ($("letter").classList.contains("gone")) return;   // 消えたあとは無効
+  answered = true;
+  if (targets[idx]) hits++; else fas++;
+  $("letter").style.color = targets[idx] ? "var(--teal)" : "var(--muted)";
+  setTimeout(() => { $("letter").style.color = "var(--navy)"; }, 200);
+}
+
+function finish(){
+  running = false;
+  clearTimeout(timer);
+
+  const isReal = (mode === "real");
+  $("rEyebrow").textContent = isReal ? "本番" : "練習 ②　やってみた";
+  $("rTitle").textContent = N + "-back の結果";
+  $("statBox").style.display = isReal ? "flex" : "none";
+  $("sHit").textContent = hits;
+  $("sMiss").textContent = misses;
+  $("sFa").textContent = fas;
+
+  const r = $("replay"); r.innerHTML = "";
+  seq.forEach((c,i) => {
+    const d = document.createElement("div");
+    d.className = "rl" + (targets[i] ? " target" : "");
+    d.textContent = c;
+    r.appendChild(d);
+  });
+
+  $("priceBox").style.display = (isReal && N === 4) ? "block" : "none";
+  $("reveal").style.display = "none";
+  $("slider").value = 300; $("yenVal").textContent = "300";
+  $("nextBtn").style.display = (isReal && N === 1) ? "inline-block" : "none";
+
+  show("result");
+}
+
+/* =========================================================
+   操作
+   ========================================================= */
+document.querySelectorAll(".tbtn").forEach(b =>
+  b.addEventListener("click", () => {
+    tempo = b.dataset.t;
+    document.querySelectorAll(".tbtn").forEach(x => x.classList.remove("on"));
+    b.classList.add("on");
+  }));
+
+document.querySelectorAll(".pick").forEach(b =>
+  b.addEventListener("click", () => {
+    const n = +b.dataset.n;
+    if (b.dataset.mode === "practice"){ show("practice"); aReset(n); }
+    else startRun(n, "real");
+  }));
+
+document.querySelectorAll(".sw").forEach(b =>
+  b.addEventListener("click", () => aReset(+b.dataset.n)));
+
+$("pGo").addEventListener("click", () => startRun(aN, "real"));
+$("pBack").addEventListener("click", () => { aClear(); show("home"); });
+
+$("sameBtn").addEventListener("click", respond);
+document.addEventListener("keydown", e => {
+  if (e.code !== "Space") return;
+  e.preventDefault();
+  if ($("run").classList.contains("show")) respond();
+});
+
+$("againBtn").addEventListener("click", () => startRun(N, mode));
+$("nextBtn").addEventListener("click", () => startRun(4, "real"));
+$("homeBtn").addEventListener("click", () => { clearTimeout(timer); show("home"); });
+
+$("slider").addEventListener("input", e => { $("yenVal").textContent = e.target.value; });
+$("revealBtn").addEventListener("click", () => { $("reveal").style.display = "block"; });
+</script>
+</body>
+</html>
