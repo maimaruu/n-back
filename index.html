@@ -173,6 +173,10 @@
   .tpick{cursor:pointer;font-family:inherit;color:inherit;font-weight:inherit}
   .opt.tpick:hover{border-color:var(--navy2)}
   .opt.var.tpick:hover{border-color:var(--red)}
+  .qnote{background:#fff;border-left:4px solid var(--red);border-radius:8px;
+         padding:11px 13px;margin:0 0 14px;font-size:12.5px;line-height:1.75;color:var(--navy2)}
+  .qnote b{color:var(--red)}
+  .qnote .qsub{display:block;color:var(--gray);font-size:11.5px;line-height:1.7;margin-top:6px}
 
   .src{color:var(--gray);font-size:11px;margin-top:22px;line-height:1.7}
   @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
@@ -295,6 +299,12 @@
       <b>「4-back で 300円」</b> と <b>「1-back で ◯円」</b>、どっちを選ぶ？<br>
       同じ質問を、金額を変えて数回くり返します。深く考えず、直感でどうぞ。
     </p>
+
+    <div class="qnote">
+      💡 お金は<b>成績ではなく、もう一回やること</b>に対して払われます。
+      点数がよくても悪くても、もらえる額は同じ。<b>「しんどさ」だけ</b>で選んでください。
+      <span class="qsub">（このアプリはデモなので、実際にはお金は支払われません。「もし本当にもらえるなら」で考えてみてください。）</span>
+    </div>
 
     <div class="tprog" id="tProg">1 / 6</div>
 
