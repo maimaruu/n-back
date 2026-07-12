@@ -159,9 +159,6 @@
   .opt.var{border-color:var(--red)}
   .opt.var .amt{color:var(--red)}
   .vs{align-self:center;font-size:13px;font-weight:700;color:var(--gray)}
-  .slidewrap{margin-top:14px}
-  .slidewrap .sl{font-size:12px;color:var(--gray);margin-bottom:2px}
-  input[type=range]{width:100%;accent-color:var(--red);margin:6px 0}
   .ex{background:#fff;border-radius:12px;padding:12px 14px;margin-top:12px;
       font-size:12.5px;line-height:1.8;color:var(--navy2)}
   .ex .h{font-weight:700;font-size:12px;color:var(--gray);margin-bottom:4px}
@@ -170,6 +167,12 @@
           color:var(--navy2);font-size:14px;line-height:1.9}
   #reveal b{color:var(--red)}
   #reveal .note{color:var(--gray);font-size:11.5px;line-height:1.7;display:block;margin-top:8px}
+
+  /* ---- titration two-choice ---- */
+  .tprog{text-align:center;color:var(--gray);font-size:12px;font-weight:700;margin-bottom:10px}
+  .tpick{cursor:pointer;font-family:inherit;color:inherit;font-weight:inherit}
+  .opt.tpick:hover{border-color:var(--navy2)}
+  .opt.var.tpick:hover{border-color:var(--red)}
 
   .src{color:var(--gray);font-size:11px;margin-top:22px;line-height:1.7}
   @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
@@ -284,51 +287,50 @@
     <p class="legend"><b>赤い枠</b> ＝ ここで押すはずやった。</p>
   </div>
 
-  <!-- ---- cognitive effort discounting ---- -->
+  <!-- ---- cognitive effort discounting（滴定：adjusting-amount 法）---- -->
   <div class="price" id="priceBox">
     <h3>もう一回やるなら、いくらほしい？</h3>
     <p class="q">
       実験の参加者も、これを本当に聞かれました。<br>
-      下の2枚、<b>どっちを選びますか。</b>
+      <b>「4-back で 300円」</b> と <b>「1-back で ◯円」</b>、どっちを選ぶ？<br>
+      同じ質問を、金額を変えて数回くり返します。深く考えず、直感でどうぞ。
     </p>
 
-    <div class="deal">
-      <div class="opt">
+    <div class="tprog" id="tProg">1 / 6</div>
+
+    <div class="deal" id="tDeal">
+      <button class="opt tpick" id="pickHard">
         <div class="lv">4-back</div>
         <div class="sub">もう一回やって</div>
         <div class="amt">300円</div>
-      </div>
+      </button>
       <div class="vs">or</div>
-      <div class="opt var">
+      <button class="opt var tpick" id="pickEasy">
         <div class="lv">1-back</div>
         <div class="sub">もう一回やって</div>
-        <div class="amt"><span id="yenVal">300</span>円</div>
+        <div class="amt"><span id="easyAmt">150</span>円</div>
+      </button>
+    </div>
+
+    <div id="tResult" style="display:none">
+      <div class="ex">
+        <div class="h">あなたの境目</div>
+        「4-back で 300円」と「1-back で <b><span id="ipVal">—</span>円</b>」が、
+        あなたにとって<b>ほぼ同じ価値</b>でした。
       </div>
-    </div>
 
-    <div class="slidewrap">
-      <div class="sl">1-back の金額を下げていく</div>
-      <input type="range" id="slider" min="0" max="300" step="10" value="300">
-      <div class="sl">「これ以上下げるなら、4-back をやる方がマシ」で止めてください。</div>
-    </div>
+      <button class="btn red" id="revealBtn" style="margin-top:14px">回答をみる</button>
 
-    <div class="ex">
-      <div class="h">例</div>
-      1-back が <b>290円</b> → ほとんど同じ額。ラクな 1-back を選ぶ。<br>
-      1-back が <b>20円</b> → さすがに安い。しんどくても 4-back で 300円。<br>
-      その<b>境目の金額</b>が、あなたにとっての「4-back のしんどさの値段」。
-    </div>
-
-    <button class="btn red" id="revealBtn" style="margin-top:14px">回答をみる</button>
-
-    <div id="reveal">
-      参加者の境目は、平均で <b>約150円</b>。<br>
-      「4-back で 300円」と「1-back で 約150円」が<b>同じ価値</b>だった、ということ。<br>
-      <b>300円のうち150円を捨ててでも、4-back はやりたくない。</b>
-      <span class="note">
-        ※ 高齢者（63〜88歳）の境目は約60円。240円を捨ててでも 4-back を避ける。<br>
-        ※ 原論文は $2.00 基準（若年成人 $0.98 / 高齢者 $0.40）。1ドル150円で換算。金額は人によって大きくちがいます。
-      </span>
+      <div id="reveal">
+        「4-back で 300円」もらう体験は、あなたにとって
+        <b><span id="svVal">—</span>円</b>ぶんの値打ちしかなかった、ということ（＝4-back の<b>主観的価値</b>）。<br><br>
+        だから <b>しんどさの値段 ＝ 300 − <span id="svVal2">—</span> ＝ <span id="costVal">—</span>円</b>。<br>
+        4-back を避けるために、300円のうち <b><span id="costVal2">—</span>円</b> を捨ててもいい、と感じたわけです。
+        <span class="note">
+          ※ 参加者の境目は平均 約150円（＝しんどさ 約150円）。高齢者（63〜88歳）は約60円（＝しんどさ 約240円）。<br>
+          ※ 原論文は $2.00 基準（若年成人 $0.98 / 高齢者 $0.40）。1ドル150円で換算。金額は人によって大きくちがいます。
+        </span>
+      </div>
     </div>
   </div>
 
@@ -585,11 +587,51 @@ function finish(){
   });
 
   $("priceBox").style.display = (isReal && N === 4) ? "block" : "none";
-  $("reveal").style.display = "none";
-  $("slider").value = 300; $("yenVal").textContent = "300";
+  if (isReal && N === 4) titrReset();
   $("nextBtn").style.display = (isReal && N === 1) ? "inline-block" : "none";
 
   show("result");
+}
+
+/* =========================================================
+   しんどさの値段：滴定（adjusting-amount 法）
+   「4-back で 300円」vs「1-back で ◯円」を6回。ラクな方を選ぶと額が下がり、
+   4-back を選ぶと額が上がる。変化幅は毎回半分。残った金額＝無差別点。
+   ========================================================= */
+const TITR_TRIALS = 6;
+let tAmt = 150, tStep = 75, tTrial = 0;
+const round5 = x => Math.round(x/5)*5;
+
+function titrRender(){
+  $("tProg").textContent = (tTrial+1) + " / " + TITR_TRIALS;
+  $("easyAmt").textContent = round5(tAmt);
+}
+
+function titrReset(){
+  tAmt = 150; tStep = 75; tTrial = 0;
+  $("tDeal").style.display = "flex";
+  $("tProg").style.display = "block";
+  $("tResult").style.display = "none";
+  $("reveal").style.display = "none";
+  titrRender();
+}
+
+function titrChoose(easy){                        // easy=true → 1-back（変動）を選んだ
+  if (easy) tAmt -= tStep; else tAmt += tStep;    // ラクな方を選んだら額を下げる
+  tStep /= 2;
+  tTrial++;
+  if (tTrial < TITR_TRIALS){ titrRender(); return; }
+
+  const ip   = round5(tAmt);                      // 境目＝無差別点＝4-back の主観的価値
+  const cost = 300 - ip;                          // しんどさの値段
+  $("ipVal").textContent    = ip;
+  $("svVal").textContent    = ip;
+  $("svVal2").textContent   = ip;
+  $("costVal").textContent  = cost;
+  $("costVal2").textContent = cost;
+  $("tDeal").style.display   = "none";
+  $("tProg").style.display   = "none";
+  $("tResult").style.display = "block";
 }
 
 /* =========================================================
@@ -626,7 +668,8 @@ $("againBtn").addEventListener("click", () => startRun(N, mode));
 $("nextBtn").addEventListener("click", () => startRun(4, "real"));
 $("homeBtn").addEventListener("click", () => { clearTimeout(timer); show("home"); });
 
-$("slider").addEventListener("input", e => { $("yenVal").textContent = e.target.value; });
+$("pickHard").addEventListener("click", () => titrChoose(false));
+$("pickEasy").addEventListener("click", () => titrChoose(true));
 $("revealBtn").addEventListener("click", () => { $("reveal").style.display = "block"; });
 </script>
 </body>
