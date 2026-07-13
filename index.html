@@ -208,10 +208,11 @@
       <div class="k">本番<span class="tag hot">採点あり</span></div>
       <div class="d">毎回ちがう並び。<b>「何円もらえるならやりたいか」</b>を最後に聞きます。</div>
       <div class="tempo">
-        <span class="tlab">テンポ</span>
         <button class="tbtn on" data-t="fast">はやい</button>
         <button class="tbtn" data-t="slow">おそい</button>
+        <button class="tbtn" data-t="paper">論文通り</button>
       </div>
+      <div class="tlab" style="margin:2px 0 0;font-weight:400">「論文通り」は本物と同じ <b>64問連続</b>（1-back も 4-back も）。4-back は地獄。</div>
       <div class="picks">
         <button class="pick" data-mode="real" data-n="1">1-back<small>1個前</small></button>
         <button class="pick" data-mode="real" data-n="4">4-back<small>4個前</small></button>
@@ -307,6 +308,7 @@
 
   <button class="same" id="sameBtn">同じ！（タップ / スペース）</button>
   <p class="hint">ちがうときは、何も押さない</p>
+  <button class="btn ghost" id="quitBtn" style="display:block;margin:14px auto 0">やめる</button>
 </section>
 
 <!-- ==================== RESULT ==================== -->
@@ -374,6 +376,7 @@
         4-back を避けるために、300円のうち <b><span id="costVal2">—</span>円</b> を捨ててもいい、と感じたわけです。
         <span class="note">
           ※ 参加者の境目は平均 約150円（＝しんどさ 約150円）。高齢者（63〜88歳）は約60円（＝しんどさ 約240円）。<br>
+          ※ 本物の実験は 1-back を基準に <b>2・3・4・5・6-back の5段階</b>を各6回・<b>計30回</b>選ばせ、レベルごとに「しんどさの値段」を出します。このツールは <b>1 vs 4 の1組だけ</b>を取り出した簡易版です。<br>
           ※ 原論文は $2.00 基準（若年成人 $0.98 / 高齢者 $0.40）。1ドル150円で換算。金額は人によって大きくちがいます。
         </span>
       </div>
@@ -398,10 +401,12 @@ const SECTIONS = ["home","practice","run","result","shindan"];
 function show(id){ SECTIONS.forEach(s => $(s).classList.toggle("show", s === id)); window.scrollTo(0,0); }
 
 const TEMPO = {                       // 文字は1.5秒表示。あいだの空白だけ変える
-  fast: {show:1500, blank:1000},
-  slow: {show:1500, blank:3500}       // 原論文どおり
+  fast:  {show:1500, blank:1000},
+  slow:  {show:1500, blank:3500},     // 原論文のテンポ
+  paper: {show:1500, blank:3500}      // 原論文どおり（テンポは slow と同じ・問題数だけ増やす）
 };
 let tempo = "fast";
+const PAPER_LEN = 64;                  // 論文通りモードの問題数（1-back / 4-back 共通）
 
 const FIXED = {                       // 練習：固定の並び
   1: ["K","P","P","R","T","M","M","Q","Q","B"],
@@ -520,10 +525,8 @@ function aStep(){
 let N = 4, mode = "real", seq = [], targets = [], idx = -1;
 let answered = false, hits = 0, misses = 0, fas = 0, timer = null, running = false;
 
-function makeSequence(n){
-  const LEN = LEN_BY_N[n];
+function makeSequence(n, LEN, want){
   const s = [], t = [];
-  let want = WANT_BY_N[n];
   for (let i = 0; i < LEN; i++){
     const canTarget = i >= n;
     const roll = Math.random();
@@ -560,7 +563,13 @@ function startRun(n, m){
   aClear();
   N = n; mode = m;
   if (m === "practice"){ seq = FIXED[n].slice(); }
-  else { const g = makeSequence(n); seq = g.s; }
+  else {
+    const LEN  = (tempo === "paper") ? PAPER_LEN : LEN_BY_N[n];
+    const want = (tempo === "paper")
+      ? Math.round(LEN * WANT_BY_N[n] / LEN_BY_N[n])   // 密度を保ったまま本数を増やす
+      : WANT_BY_N[n];
+    const g = makeSequence(n, LEN, want); seq = g.s;
+  }
   targets = targetsOf(seq, n);
   idx = -1; hits = misses = fas = 0; running = true; answered = false;
 
@@ -588,6 +597,7 @@ function countdown(k){
 }
 
 function next(){
+  if (!running) return;               // 「やめる」で中断されたら進めない
   idx++;
   if (idx >= seq.length){ finish(); return; }
   answered = false;
@@ -734,6 +744,7 @@ document.addEventListener("keydown", e => {
 $("againBtn").addEventListener("click", () => startRun(N, mode));
 $("nextBtn").addEventListener("click", () => startRun(4, "real"));
 $("homeBtn").addEventListener("click", () => { clearTimeout(timer); show("home"); });
+$("quitBtn").addEventListener("click", () => { running = false; clearTimeout(timer); aClear(); show("home"); });
 
 $("pickHard").addEventListener("click", () => titrChoose(false));
 $("pickEasy").addEventListener("click", () => titrChoose(true));
