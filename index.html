@@ -384,6 +384,15 @@
     </div>
   </div>
 
+  <div id="needOne" class="price" style="display:none">
+    <h3>あと少しで診断できます</h3>
+    <p class="q">
+      しんどさを<b>比べる</b>には、ラクな方（<b style="color:#0FA3A0">1-back（緑）</b>）も一度やってみてください。<br>
+      両方やると「もう一回やるなら、いくらほしい？」の診断が出ます。
+    </p>
+    <button class="btn red" id="goOneBtn" style="margin-top:6px">1-back（緑）をやる</button>
+  </div>
+
   <div class="foot">
     <button class="btn ghost" id="againBtn">もう一度</button>
     <button class="btn red" id="nextBtn" style="display:none">つづけて 4-back</button>
@@ -538,6 +547,7 @@ function aStep(){
    ========================================================= */
 let N = 4, mode = "real", seq = [], targets = [], idx = -1;
 let answered = false, hits = 0, misses = 0, fas = 0, timer = null, running = false;
+let done = {1:false, 4:false};        // 本番を最後まで終えたレベル（診断ゲート用）
 
 // モード別の 長さ・ターゲット数・ルアー数
 function planFor(n){
@@ -651,8 +661,11 @@ function finish(){
     r.appendChild(d);
   });
 
-  $("priceBox").style.display = (N === 4) ? "block" : "none";
-  if (N === 4){ $("priceHome").appendChild($("priceBox")); titrReset(); }
+  done[N] = true;
+  const showTitr = (N === 4 && done[1]);          // 1-back も体験済みなら診断を出す
+  $("priceBox").style.display = showTitr ? "block" : "none";
+  $("needOne").style.display  = (N === 4 && !done[1]) ? "block" : "none";
+  if (showTitr){ $("priceHome").appendChild($("priceBox")); titrReset(); }
   $("nextBtn").style.display = (N === 1) ? "inline-block" : "none";
 
   show("result");
@@ -664,16 +677,16 @@ function finish(){
    4-back を選ぶと額が上がる。変化幅は毎回半分。残った金額＝無差別点。
    ========================================================= */
 const TITR_TRIALS = 6;
-let tAmt = 150, tStep = 75, tTrial = 0;
-const round5 = x => Math.round(x/5)*5;
+const STEPS = [75, 38, 19, 9, 5, 2];   // 150円の半分から順に半減（整数・上下対称）。到達域 2〜298円
+let tAmt = 150, tTrial = 0;
 
 function titrRender(){
   $("tProg").textContent = (tTrial+1) + " / " + TITR_TRIALS;
-  $("easyAmt").textContent = tAmt;          // tAmt は常に5円グリッド上
+  $("easyAmt").textContent = tAmt;
 }
 
 function titrReset(){
-  tAmt = 150; tStep = 75; tTrial = 0;
+  tAmt = 150; tTrial = 0;
   $("tDeal").style.display = "flex";
   $("tProg").style.display = "block";
   $("tResult").style.display = "none";
@@ -682,9 +695,7 @@ function titrReset(){
 }
 
 function titrChoose(easy){                        // easy=true → 1-back（変動）を選んだ
-  if (easy) tAmt -= tStep; else tAmt += tStep;    // ラクな方を選んだら額を下げる
-  tAmt = round5(tAmt);                            // 5円グリッドに載せる（提示額＝内部値を一致）
-  tStep /= 2;
+  tAmt += (easy ? -1 : 1) * STEPS[tTrial];        // ラクな方を選んだら額を下げる。上下対称・毎回動く
   tTrial++;
   if (tTrial < TITR_TRIALS){ titrRender(); return; }
 
@@ -754,6 +765,7 @@ document.addEventListener("keydown", e => {
 
 $("againBtn").addEventListener("click", () => startRun(N, mode));
 $("nextBtn").addEventListener("click", () => startRun(4, "real"));
+$("goOneBtn").addEventListener("click", () => startRun(1, "real"));
 $("homeBtn").addEventListener("click", () => { clearTimeout(timer); show("home"); });
 $("quitBtn").addEventListener("click", () => { running = false; clearTimeout(timer); aClear(); show("home"); });
 
