@@ -121,6 +121,7 @@
   .letter{font-family:"Courier New",monospace;font-size:clamp(86px,20vw,150px);
           font-weight:700;color:var(--navy);line-height:1}
   .letter.gone{opacity:0}
+  .fix{font-family:"Courier New",monospace;font-size:clamp(60px,14vw,110px);font-weight:700;color:var(--muted);line-height:1}
   .count{font-family:"Courier New",monospace;color:var(--muted);font-size:56px;font-weight:700}
   .slots{display:flex;gap:8px;justify-content:center;margin-bottom:16px}
   .slot{width:50px;height:58px;border-radius:10px;border:2px dashed var(--muted);background:#fff;
@@ -209,11 +210,10 @@
       <div class="k">本番<span class="tag hot">採点あり</span></div>
       <div class="d">毎回ちがう並び。<b>「何円もらえるならやりたいか」</b>を最後に聞きます。</div>
       <div class="tempo">
-        <button class="tbtn on" data-t="fast">はやい</button>
-        <button class="tbtn" data-t="slow">おそい</button>
+        <button class="tbtn on" data-t="demo">デモ</button>
         <button class="tbtn" data-t="paper">論文通り</button>
       </div>
-      <div class="tlab" style="margin:2px 0 0;font-weight:400">「論文通り」は本物と同じ <b>64問連続</b>（1-back も 4-back も）。4-back は地獄。</div>
+      <div class="tlab" style="margin:2px 0 0;font-weight:400">本物と同じテンポ（1.5秒＋3.5秒）。ちがうのは長さだけ：<b>デモ 12問</b>／<b>論文通り 64問</b>。</div>
       <div class="picks">
         <button class="pick" data-mode="real" data-n="1">1-back<small>1個前</small></button>
         <button class="pick" data-mode="real" data-n="4">4-back<small>4個前</small></button>
@@ -303,10 +303,11 @@
 
   <div class="letterbox">
     <div class="letter" id="letter"></div>
+    <div class="fix" id="fix" style="display:none">+</div>
     <div class="count" id="count" style="display:none"></div>
   </div>
 
-  <button class="same" id="sameBtn">同じ！（タップ / スペース）</button>
+  <button class="same" id="sameBtn">同じ！</button>
   <p class="hint">ちがうときは、何も押さない</p>
   <button class="btn ghost" id="quitBtn" style="display:block;margin:14px auto 0">やめる</button>
 </section>
@@ -335,7 +336,7 @@
     <p class="q">
       実験の参加者も、これを本当に聞かれました。<br>
       <b>「4-back で 300円」</b> と <b>「1-back で ◯円」</b>、どっちを選ぶ？<br>
-      同じ質問を、金額を変えて数回くり返します。深く考えず、直感でどうぞ。
+      同じ質問を、金額を変えて数回くり返します。深く考えず、直感で回答してください。
     </p>
 
     <div class="qnote">
@@ -410,12 +411,11 @@ const $ = id => document.getElementById(id);
 const SECTIONS = ["home","practice","run","result","shindan"];
 function show(id){ SECTIONS.forEach(s => $(s).classList.toggle("show", s === id)); window.scrollTo(0,0); }
 
-const TEMPO = {                       // 文字は1.5秒表示。あいだの空白だけ変える
-  fast:  {show:1500, blank:1000},
-  slow:  {show:1500, blank:3500},     // 原論文のテンポ
-  paper: {show:1500, blank:3500}      // 原論文どおり（テンポは slow と同じ・問題数だけ増やす）
+const TEMPO = {                       // テンポは論文固定：1文字1.5秒＋間3.5秒。ちがうのは長さだけ
+  demo:  {show:1500, blank:3500},
+  paper: {show:1500, blank:3500}
 };
-let tempo = "fast";
+let tempo = "demo";
 const PAPER_LEN = 64;                  // 論文通りモードの問題数（1-back / 4-back 共通）
 
 const FIXED = {                       // 練習：固定の並び
@@ -423,10 +423,9 @@ const FIXED = {                       // 練習：固定の並び
   4: ["K","P","R","T","K","M","B","T","M","R","B","P"]
 };
 const LETTERS = "KPRTMBDFHLNQSVWZ".split("");
-const LEN_BY_N  = {1:10, 4:12};       // 短いモードの長さ
-const WANT_BY_N = {1:3,  4:4};        // 短いモードのターゲット数
-const PAPER_TARGETS = 16;             // 論文：64問中16個（25%・レベル間で固定）
-const PAPER_LURES   = {1:8, 4:3};     // 論文：ルアーの固定個数（N別に非対称）
+const DEMO_LEN = 12, DEMO_TARGETS = 3;   // デモ：1-back / 4-back 共通（12問・25%）
+const PAPER_TARGETS = 16;                // 論文：64問中16個（25%・レベル間で固定）
+const PAPER_LURES   = {1:8, 4:3};        // 論文：ルアーの固定個数（N別に非対称）
 
 // レベルを色で識別する（論文の "colors uniquely identifying levels"）
 const LV = {
@@ -552,7 +551,7 @@ let done = {1:false, 4:false};        // 本番を最後まで終えたレベル
 // モード別の 長さ・ターゲット数・ルアー数
 function planFor(n){
   if (tempo === "paper") return {len: PAPER_LEN, targets: PAPER_TARGETS, lures: PAPER_LURES[n]};
-  return {len: LEN_BY_N[n], targets: WANT_BY_N[n], lures: 2};
+  return {len: DEMO_LEN, targets: DEMO_TARGETS, lures: 2};   // デモ：1-back も 4-back も 12問・3個（25%）
 }
 
 function shuffle(a){ for (let i = a.length-1; i > 0; i--){ const j = Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
@@ -601,7 +600,8 @@ function startRun(n, m){
   $("modeLabel").innerHTML = lv.label + "（<b style='color:" + lv.color + "'>" + lv.jp + "</b>）";
   $("ruleLabel").textContent = n + "個前と同じなら押す";
   $("progress").textContent = "0 / " + seq.length;
-  $("letter").style.color = lv.color;
+  $("letter").style.color = "var(--navy)";
+  $("fix").style.display = "none";
 
   show("run");
   countdown(3);
@@ -609,6 +609,7 @@ function startRun(n, m){
 
 function countdown(k){
   $("letter").style.display = "none";
+  $("fix").style.display = "none";
   $("count").style.display = "block";
   $("count").textContent = k > 0 ? k : "";
   if (k > 0) timer = setTimeout(() => countdown(k-1), 800);
@@ -625,11 +626,15 @@ function next(){
   if (idx >= seq.length){ finish(); return; }
   answered = false;
   $("progress").textContent = (idx+1) + " / " + seq.length;
+  $("fix").style.display = "none";
+  $("letter").style.display = "block";
   $("letter").textContent = seq[idx];
   $("letter").classList.remove("gone");
 
-  timer = setTimeout(() => {                 // 1.5秒で消える
+  timer = setTimeout(() => {                 // 1.5秒で消える → 固定十字（＋）に置き換え
     $("letter").classList.add("gone");
+    $("letter").style.display = "none";
+    $("fix").style.display = "block";
     if (!answered && targets[idx]) misses++;
     timer = setTimeout(next, TEMPO[tempo].blank);
   }, TEMPO[tempo].show);
@@ -640,8 +645,8 @@ function respond(){
   if ($("letter").classList.contains("gone")) return;   // 消えたあとは無効
   answered = true;
   if (targets[idx]) hits++; else fas++;
-  $("letter").style.color = "var(--navy)";                 // 押したことを一瞬示す（正誤は結果画面で）
-  setTimeout(() => { $("letter").style.color = LV[N].color; }, 200);
+  $("letter").style.color = "var(--muted)";                // 押したことを一瞬示す（正誤は結果画面で）
+  setTimeout(() => { $("letter").style.color = "var(--navy)"; }, 200);
 }
 
 function finish(){
