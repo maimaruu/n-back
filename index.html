@@ -177,6 +177,7 @@
          padding:11px 13px;margin:0 0 14px;font-size:12.5px;line-height:1.75;color:var(--navy2)}
   .qnote b{color:var(--red)}
   .qnote .qsub{display:block;color:var(--gray);font-size:11.5px;line-height:1.7;margin-top:6px}
+  .cdot{display:inline-block;width:12px;height:12px;border-radius:50%;vertical-align:middle;margin-right:6px}
 
   .src{color:var(--gray);font-size:11px;margin-top:22px;line-height:1.7}
   @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
@@ -226,7 +227,9 @@
 
   <p class="src">
     Westbrook A, Kester D, Braver TS (2013) What Is the Subjective Cost of Cognitive Effort?
-    PLoS ONE 8(7): e68210. の N-back 課題をもとにした簡易版。
+    PLoS ONE 8(7): e68210. の N-back 課題をもとにした簡易版。<br>
+    ※ 本物は「同じ／ちがう」を毎回ボタンで答えます。このデモは押しやすさを優先して「同じときだけ押す」に簡略化しています。<br>
+    ※ 「論文通り」は本物と同じ 1文字1.5秒＋間3.5秒（文字が消えてから次の文字まで3.5秒＝offset-to-onset 解釈）で 64問連続。
   </p>
 </section>
 
@@ -303,9 +306,6 @@
     <div class="count" id="count" style="display:none"></div>
   </div>
 
-  <div class="cap" id="slotcap" style="margin-bottom:8px"></div>
-  <div class="slots" id="slots"></div>
-
   <button class="same" id="sameBtn">同じ！（タップ / スペース）</button>
   <p class="hint">ちがうときは、何も押さない</p>
   <button class="btn ghost" id="quitBtn" style="display:block;margin:14px auto 0">やめる</button>
@@ -347,16 +347,16 @@
     <div class="tprog" id="tProg">1 / 6</div>
 
     <div class="deal" id="tDeal">
-      <button class="opt tpick" id="pickHard">
-        <div class="lv">4-back</div>
-        <div class="sub">もう一回やって</div>
+      <button class="opt tpick" id="pickHard" style="border-color:#FF5A4C">
+        <div class="lv" style="color:#FF5A4C"><span class="cdot" style="background:#FF5A4C"></span>赤</div>
+        <div class="sub">（4-back）もう一回</div>
         <div class="amt">300円</div>
       </button>
       <div class="vs">or</div>
-      <button class="opt var tpick" id="pickEasy">
-        <div class="lv">1-back</div>
-        <div class="sub">もう一回やって</div>
-        <div class="amt"><span id="easyAmt">150</span>円</div>
+      <button class="opt var tpick" id="pickEasy" style="border-color:#0FA3A0">
+        <div class="lv" style="color:#0FA3A0"><span class="cdot" style="background:#0FA3A0"></span>緑</div>
+        <div class="sub">（1-back）もう一回</div>
+        <div class="amt" style="color:#0FA3A0"><span id="easyAmt">150</span>円</div>
       </button>
     </div>
 
@@ -376,7 +376,8 @@
         4-back を避けるために、300円のうち <b><span id="costVal2">—</span>円</b> を捨ててもいい、と感じたわけです。
         <span class="note">
           ※ 参加者の境目は平均 約150円（＝しんどさ 約150円）。高齢者（63〜88歳）は約60円（＝しんどさ 約240円）。<br>
-          ※ 本物の実験は 1-back を基準に <b>2・3・4・5・6-back の5段階</b>を各6回・<b>計30回</b>選ばせ、レベルごとに「しんどさの値段」を出します。このツールは <b>1 vs 4 の1組だけ</b>を取り出した簡易版です。<br>
+          ※ 本物の実験は 1-back を基準に <b>2・3・4・5・6-back の5段階</b>を各6回・<b>計30回</b>選ばせます（<b>若年成人の場合</b>。高齢者は 2–4-back の3段階×6＝18回）。このツールは <b>1 vs 4 の1組だけ</b>を取り出した簡易版です。<br>
+          ※ 本物はこの選択画面でレベルを<b>「色」だけ</b>で呼び、「4」「1」の数字を見せません。数字に引っ張られる（アンカリング）のを避けるためです。このデモは教材も兼ねるので小さく数字も併記しています。<br>
           ※ 原論文は $2.00 基準（若年成人 $0.98 / 高齢者 $0.40）。1ドル150円で換算。金額は人によって大きくちがいます。
         </span>
       </div>
@@ -413,8 +414,16 @@ const FIXED = {                       // 練習：固定の並び
   4: ["K","P","R","T","K","M","B","T","M","R","B","P"]
 };
 const LETTERS = "KPRTMBDFHLNQSVWZ".split("");
-const LEN_BY_N  = {1:10, 4:12};       // 本番の長さ
-const WANT_BY_N = {1:3,  4:4};        // 押すべき回数
+const LEN_BY_N  = {1:10, 4:12};       // 短いモードの長さ
+const WANT_BY_N = {1:3,  4:4};        // 短いモードのターゲット数
+const PAPER_TARGETS = 16;             // 論文：64問中16個（25%・レベル間で固定）
+const PAPER_LURES   = {1:8, 4:3};     // 論文：ルアーの固定個数（N別に非対称）
+
+// レベルを色で識別する（論文の "colors uniquely identifying levels"）
+const LV = {
+  1: {label:"1-back", jp:"緑", color:"#0FA3A0"},
+  4: {label:"4-back", jp:"赤", color:"#FF5A4C"}
+};
 
 function targetsOf(seq, n){ return seq.map((c,k) => k >= n && seq[k-n] === c); }
 
@@ -467,8 +476,13 @@ function drawMem(cmpOn, nowCh, dropped){
 function aReset(n){
   aClear();
   aN = n; aSeq = FIXED[n]; aIdx = 0; aHeld = [];
-  document.querySelectorAll(".sw").forEach(b => b.classList.toggle("on", +b.dataset.n === n));
-  $("pTitle").innerHTML = n + "-back ： <span class='hl'>" + n + "個前</span>と同じなら押す";
+  document.querySelectorAll(".sw").forEach(b => {
+    const on = +b.dataset.n === n;
+    b.classList.toggle("on", on);
+    b.style.background  = on ? LV[n].color : "";
+    b.style.borderColor = on ? LV[n].color : "";
+  });
+  $("pTitle").innerHTML = "<span style='color:" + LV[n].color + "'>" + n + "-back（" + LV[n].jp + "）</span> ： <span class='hl'>" + n + "個前</span>と同じなら押す";
   $("memcap").innerHTML = "頭の中で持っておく分（直近 <b>" + n + "個</b>）";
   $("rowlab").style.display = (n === 1) ? "none" : "flex";   // 1個しかないときは不要
   $("nowBox").textContent = "";
@@ -525,60 +539,59 @@ function aStep(){
 let N = 4, mode = "real", seq = [], targets = [], idx = -1;
 let answered = false, hits = 0, misses = 0, fas = 0, timer = null, running = false;
 
-function makeSequence(n, LEN, want){
-  const s = [], t = [];
-  for (let i = 0; i < LEN; i++){
-    const canTarget = i >= n;
-    const roll = Math.random();
-    if (canTarget && want > 0 && roll < 0.42){          // ターゲット
-      s.push(s[i-n]); t.push(true); want--;
-    } else if (i >= n+1 && roll < 0.62){                // ルアー（n+1個前と同じ）
-      s.push(s[i-n-1]); t.push(false);
-    } else {
-      let c, guard = 0;
-      do { c = LETTERS[Math.floor(Math.random()*LETTERS.length)]; guard++; }
-      while (canTarget && c === s[i-n] && guard < 30);
-      s.push(c); t.push(false);
-    }
-  }
-  return { s, t };
+// モード別の 長さ・ターゲット数・ルアー数
+function planFor(n){
+  if (tempo === "paper") return {len: PAPER_LEN, targets: PAPER_TARGETS, lures: PAPER_LURES[n]};
+  return {len: LEN_BY_N[n], targets: WANT_BY_N[n], lures: 2};
 }
 
-function drawSlots(){
-  const box = $("slots");
-  box.innerHTML = "";
-  for (let k = 0; k < N; k++){
-    const d = document.createElement("div");
-    d.className = "slot";
-    box.appendChild(d);
+function shuffle(a){ for (let i = a.length-1; i > 0; i--){ const j = Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+
+// ターゲット数を「必ず」満たし、ルアーも指定個数だけ置く（乱数まかせにしない）
+function makeSequence(n, LEN, nTargets, nLures){
+  const s = new Array(LEN).fill(null);
+  const role = new Array(LEN).fill("fill");
+  const rand = () => LETTERS[Math.floor(Math.random()*LETTERS.length)];
+
+  const elig = []; for (let i = n; i < LEN; i++) elig.push(i);
+  shuffle(elig);
+  elig.slice(0, Math.min(nTargets, elig.length)).forEach(i => role[i] = "target");
+
+  const lags = [n+1, n-1, n+2].filter(L => L >= 1 && L !== n);   // N+2以内・ちょうどNは除く
+  const lurePool = elig.filter(i => role[i] === "fill" && lags.some(L => i - L >= 0));
+  shuffle(lurePool);
+  lurePool.slice(0, Math.min(nLures, lurePool.length)).forEach(i => role[i] = "lure");
+
+  for (let i = 0; i < LEN; i++){
+    const canTarget = i >= n;
+    if (role[i] === "target"){
+      s[i] = s[i-n];                                            // ちょうどN個前と同じ
+    } else if (role[i] === "lure"){
+      const L = shuffle(lags.slice()).find(L => i - L >= 0 && s[i-L] !== s[i-n]);
+      if (L != null){ s[i] = s[i-L]; }
+      else { let c; do { c = rand(); } while (canTarget && c === s[i-n]); s[i] = c; }
+    } else {
+      let c, g = 0;
+      do { c = rand(); g++; } while (canTarget && c === s[i-n] && g < 40);   // うっかりターゲットを回避
+      s[i] = c;
+    }
   }
-}
-function pulseSlots(){
-  [...$("slots").children].forEach((d,k) => {
-    setTimeout(() => { d.classList.add("pulse"); setTimeout(() => d.classList.remove("pulse"), 220); }, k*50);
-  });
+  return { s };
 }
 
 function startRun(n, m){
   aClear();
   N = n; mode = m;
-  if (m === "practice"){ seq = FIXED[n].slice(); }
-  else {
-    const LEN  = (tempo === "paper") ? PAPER_LEN : LEN_BY_N[n];
-    const want = (tempo === "paper")
-      ? Math.round(LEN * WANT_BY_N[n] / LEN_BY_N[n])   // 密度を保ったまま本数を増やす
-      : WANT_BY_N[n];
-    const g = makeSequence(n, LEN, want); seq = g.s;
-  }
+  const p = planFor(n);
+  seq = makeSequence(n, p.len, p.targets, p.lures).s;
   targets = targetsOf(seq, n);
   idx = -1; hits = misses = fas = 0; running = true; answered = false;
 
-  $("modeLabel").textContent = n + "-back";
+  const lv = LV[n];
+  $("modeLabel").innerHTML = lv.label + "（<b style='color:" + lv.color + "'>" + lv.jp + "</b>）";
   $("ruleLabel").textContent = n + "個前と同じなら押す";
   $("progress").textContent = "0 / " + seq.length;
-  $("slotcap").textContent = "頭の中で持っておく分（" + n + "個）";
-  $("letter").style.color = "var(--navy)";
-  drawSlots();
+  $("letter").style.color = lv.color;
 
   show("run");
   countdown(3);
@@ -604,7 +617,6 @@ function next(){
   $("progress").textContent = (idx+1) + " / " + seq.length;
   $("letter").textContent = seq[idx];
   $("letter").classList.remove("gone");
-  pulseSlots();
 
   timer = setTimeout(() => {                 // 1.5秒で消える
     $("letter").classList.add("gone");
@@ -618,18 +630,15 @@ function respond(){
   if ($("letter").classList.contains("gone")) return;   // 消えたあとは無効
   answered = true;
   if (targets[idx]) hits++; else fas++;
-  $("letter").style.color = targets[idx] ? "var(--teal)" : "var(--muted)";
-  setTimeout(() => { $("letter").style.color = "var(--navy)"; }, 200);
+  $("letter").style.color = "var(--navy)";                 // 押したことを一瞬示す（正誤は結果画面で）
+  setTimeout(() => { $("letter").style.color = LV[N].color; }, 200);
 }
 
 function finish(){
   running = false;
   clearTimeout(timer);
 
-  const isReal = (mode === "real");
-  $("rEyebrow").textContent = isReal ? "本番" : "練習 ②　やってみた";
-  $("rTitle").textContent = N + "-back の結果";
-  $("statBox").style.display = isReal ? "flex" : "none";
+  $("rTitle").innerHTML = "<span style='color:" + LV[N].color + "'>" + N + "-back</span> の結果";
   $("sHit").textContent = hits;
   $("sMiss").textContent = misses;
   $("sFa").textContent = fas;
@@ -642,9 +651,9 @@ function finish(){
     r.appendChild(d);
   });
 
-  $("priceBox").style.display = (isReal && N === 4) ? "block" : "none";
-  if (isReal && N === 4){ $("priceHome").appendChild($("priceBox")); titrReset(); }
-  $("nextBtn").style.display = (isReal && N === 1) ? "inline-block" : "none";
+  $("priceBox").style.display = (N === 4) ? "block" : "none";
+  if (N === 4){ $("priceHome").appendChild($("priceBox")); titrReset(); }
+  $("nextBtn").style.display = (N === 1) ? "inline-block" : "none";
 
   show("result");
 }
@@ -660,7 +669,7 @@ const round5 = x => Math.round(x/5)*5;
 
 function titrRender(){
   $("tProg").textContent = (tTrial+1) + " / " + TITR_TRIALS;
-  $("easyAmt").textContent = round5(tAmt);
+  $("easyAmt").textContent = tAmt;          // tAmt は常に5円グリッド上
 }
 
 function titrReset(){
@@ -674,11 +683,12 @@ function titrReset(){
 
 function titrChoose(easy){                        // easy=true → 1-back（変動）を選んだ
   if (easy) tAmt -= tStep; else tAmt += tStep;    // ラクな方を選んだら額を下げる
+  tAmt = round5(tAmt);                            // 5円グリッドに載せる（提示額＝内部値を一致）
   tStep /= 2;
   tTrial++;
   if (tTrial < TITR_TRIALS){ titrRender(); return; }
 
-  const ip   = round5(tAmt);                      // 境目＝無差別点＝4-back の主観的価値
+  const ip   = tAmt;                              // 境目＝無差別点＝4-back の主観的価値
   const cost = 300 - ip;                          // しんどさの値段
   $("ipVal").textContent    = ip;
   $("svVal").textContent    = ip;
@@ -706,6 +716,7 @@ document.querySelectorAll(".pick").forEach(b =>
     if (b.dataset.mode === "practice"){ show("practice"); aReset(n); }
     else startRun(n, "real");
   }));
+document.querySelectorAll(".pick").forEach(b => { b.style.borderColor = LV[+b.dataset.n].color; });
 
 document.querySelectorAll(".sw").forEach(b =>
   b.addEventListener("click", () => aReset(+b.dataset.n)));
