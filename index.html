@@ -219,10 +219,23 @@
     </div>
   </div>
 
+  <div class="foot">
+    <button class="btn ghost" id="shindanBtn">診断だけする</button>
+  </div>
+
   <p class="src">
     Westbrook A, Kester D, Braver TS (2013) What Is the Subjective Cost of Cognitive Effort?
     PLoS ONE 8(7): e68210. の N-back 課題をもとにした簡易版。
   </p>
+</section>
+
+<!-- ==================== SHINDAN（診断）==================== -->
+<section id="shindan">
+  <div class="eyebrow">診断</div>
+  <p class="lead" style="font-size:16px">1-back と 4-back をやってから診断してください。</p>
+  <div class="foot">
+    <button class="btn ghost" id="shindanBack">もどる</button>
+  </div>
 </section>
 
 <!-- ==================== PRACTICE (アニメ) ==================== -->
@@ -358,7 +371,7 @@
    共通
    ========================================================= */
 const $ = id => document.getElementById(id);
-const SECTIONS = ["home","practice","run","result"];
+const SECTIONS = ["home","practice","run","result","shindan"];
 function show(id){ SECTIONS.forEach(s => $(s).classList.toggle("show", s === id)); window.scrollTo(0,0); }
 
 const TEMPO = {                       // 文字は1.5秒表示。あいだの空白だけ変える
@@ -666,6 +679,9 @@ document.querySelectorAll(".sw").forEach(b =>
 
 $("pGo").addEventListener("click", () => startRun(aN, "real"));
 $("pBack").addEventListener("click", () => { aClear(); show("home"); });
+
+$("shindanBtn").addEventListener("click", () => { aClear(); show("shindan"); });
+$("shindanBack").addEventListener("click", () => show("home"));
 
 $("sameBtn").addEventListener("click", respond);
 document.addEventListener("keydown", e => {
