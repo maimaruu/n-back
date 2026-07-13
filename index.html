@@ -232,9 +232,31 @@
 <!-- ==================== SHINDAN（診断）==================== -->
 <section id="shindan">
   <div class="eyebrow">診断</div>
-  <p class="lead" style="font-size:16px">1-back と 4-back をやってから診断してください。</p>
-  <div class="foot">
-    <button class="btn ghost" id="shindanBack">もどる</button>
+
+  <!-- step 1: 確認 -->
+  <div id="sQ">
+    <h1>1-back と 4-back を<span class="hl">体験しましたか？</span></h1>
+    <p class="lead">この診断は、両方をやったことがある前提です。</p>
+    <div class="foot">
+      <button class="btn red" id="sYesBtn">はい</button>
+      <button class="btn ghost" id="sNoBtn">いいえ</button>
+    </div>
+  </div>
+
+  <!-- step 2: いいえ -->
+  <div id="sNo" style="display:none">
+    <p class="lead" style="font-size:16px">1-back と 4-back をやってから診断してください。</p>
+    <div class="foot">
+      <button class="btn ghost" id="sNoBack">もどる</button>
+    </div>
+  </div>
+
+  <!-- step 3: はい → 滴定（#priceBox がここに移動してくる） -->
+  <div id="sYes" style="display:none">
+    <div id="sYesSlot"></div>
+    <div class="foot">
+      <button class="btn ghost" id="sYesBack">もどる</button>
+    </div>
   </div>
 </section>
 
@@ -304,6 +326,7 @@
     <p class="legend"><b>赤い枠</b> ＝ ここで押すはずやった。</p>
   </div>
 
+  <div id="priceHome"></div>
   <!-- ---- cognitive effort discounting（滴定：adjusting-amount 法）---- -->
   <div class="price" id="priceBox">
     <h3>もう一回やるなら、いくらほしい？</h3>
@@ -610,7 +633,7 @@ function finish(){
   });
 
   $("priceBox").style.display = (isReal && N === 4) ? "block" : "none";
-  if (isReal && N === 4) titrReset();
+  if (isReal && N === 4){ $("priceHome").appendChild($("priceBox")); titrReset(); }
   $("nextBtn").style.display = (isReal && N === 1) ? "inline-block" : "none";
 
   show("result");
@@ -680,8 +703,26 @@ document.querySelectorAll(".sw").forEach(b =>
 $("pGo").addEventListener("click", () => startRun(aN, "real"));
 $("pBack").addEventListener("click", () => { aClear(); show("home"); });
 
-$("shindanBtn").addEventListener("click", () => { aClear(); show("shindan"); });
-$("shindanBack").addEventListener("click", () => show("home"));
+/* 診断：滴定ブロックは #priceHome（結果画面）と #sYesSlot（診断）で1個を貸し借り */
+$("priceHome").appendChild($("priceBox"));       // 起動時に定位置へ
+
+function shindanReset(){                          // step1 に戻し、滴定を定位置へ返す
+  $("priceHome").appendChild($("priceBox"));
+  $("sQ").style.display   = "block";
+  $("sNo").style.display  = "none";
+  $("sYes").style.display = "none";
+}
+$("shindanBtn").addEventListener("click", () => { aClear(); shindanReset(); show("shindan"); });
+$("sNoBtn").addEventListener("click", () => { $("sQ").style.display = "none"; $("sNo").style.display = "block"; });
+$("sYesBtn").addEventListener("click", () => {
+  $("sQ").style.display = "none";
+  $("sYesSlot").appendChild($("priceBox"));      // 滴定を診断側へ借りてくる
+  $("priceBox").style.display = "block";
+  titrReset();
+  $("sYes").style.display = "block";
+});
+$("sNoBack").addEventListener("click", () => { shindanReset(); show("home"); });
+$("sYesBack").addEventListener("click", () => { shindanReset(); show("home"); });
 
 $("sameBtn").addEventListener("click", respond);
 document.addEventListener("keydown", e => {
