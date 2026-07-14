@@ -782,8 +782,9 @@ $("sYesBtn").addEventListener("click", () => {
   titrReset();
   $("sYes").style.display = "block";
 });
-$("sNoBack").addEventListener("click", () => { shindanReset(); show("home"); });
-$("sYesBack").addEventListener("click", () => { shindanReset(); show("home"); });
+function leaveShindan(){ shindanReset(); show(DIAG_ONLY ? "shindan" : "home"); }
+$("sNoBack").addEventListener("click", leaveShindan);
+$("sYesBack").addEventListener("click", leaveShindan);
 
 $("sameBtn").addEventListener("click", respond);
 document.addEventListener("keydown", e => {
@@ -801,6 +802,10 @@ $("quitBtn").addEventListener("click", () => { running = false; clearTimeout(tim
 $("pickHard").addEventListener("click", () => titrChoose(false));
 $("pickEasy").addEventListener("click", () => titrChoose(true));
 $("revealBtn").addEventListener("click", () => { $("reveal").style.display = "block"; });
+
+/* QR（?diag 付きURL）から開いたら、診断だけを表示する。練習・本番には入れない */
+const DIAG_ONLY = new URLSearchParams(location.search).has("diag");
+if (DIAG_ONLY){ shindanReset(); show("shindan"); }
 </script>
 </body>
 </html>
