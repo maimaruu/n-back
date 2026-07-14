@@ -44,6 +44,9 @@
   /* ---------- home menu ---------- */
   .menu{display:flex;gap:14px;flex-wrap:wrap;margin-top:18px}
   .box{flex:1 1 300px;background:var(--card);border-radius:16px;padding:20px}
+  .boxbtn{display:block;width:100%;text-align:left;font-family:inherit;color:inherit;cursor:pointer;border:2px solid transparent;margin:0}
+  .boxbtn:hover{border-color:var(--muted)}
+  .boxbtn .d{margin-bottom:0}
   .box .k{font-size:18px;font-weight:700;margin-bottom:4px}
   .box .k .tag{font-size:11px;font-weight:700;color:#fff;background:var(--navy2);
                border-radius:999px;padding:3px 9px;margin-left:8px;vertical-align:2px}
@@ -191,38 +194,48 @@
 <section id="home" class="show">
   <div class="eyebrow">Westbrook, Kester &amp; Braver (2013)</div>
   <h1>文字が1つずつ出ます。<span class="hl">N個前と同じなら押す。</span></h1>
-  <p class="lead">
-    前に出た文字は消えます。メモも取れません。<b>頭の中だけ</b>で覚えて、更新して、比べる。<br>
-    まずは <b>1-back（1個前）</b> に挑戦してみよう。
-  </p>
 
-  <div class="menu">
-    <div class="box">
-      <div class="k">練習<span class="tag">採点なし・ゆっくり</span></div>
-      <div class="d">文字の流れを見てから、本番へ。</div>
-      <div class="picks">
-        <button class="pick" data-mode="practice" data-n="1">1-back<small>1個前</small></button>
-        <button class="pick" data-mode="practice" data-n="4">4-back<small>4個前</small></button>
-      </div>
-    </div>
-
-    <div class="box">
-      <div class="k">本番<span class="tag hot">採点あり</span></div>
-      <div class="d">毎回ちがう並び。<b>「何円もらえるならやりたいか」</b>を最後に聞きます。</div>
-      <div class="tempo">
-        <button class="tbtn on" data-t="demo">デモ</button>
-        <button class="tbtn" data-t="paper">論文通り</button>
-      </div>
-      <div class="tlab" style="margin:2px 0 0;font-weight:400"><b>デモ 12問</b>／<b>論文通り 64問</b></div>
-      <div class="picks">
-        <button class="pick" data-mode="real" data-n="1">1-back<small>1個前</small></button>
-        <button class="pick" data-mode="real" data-n="4">4-back<small>4個前</small></button>
-      </div>
+  <!-- 最初の3択 -->
+  <div id="homeTop">
+    <div class="menu">
+      <button class="box boxbtn" data-go="practice">
+        <div class="k">練習<span class="tag">採点なし・ゆっくり</span></div>
+        <div class="d">文字の流れを見てから、本番へ。</div>
+      </button>
+      <button class="box boxbtn" data-go="real">
+        <div class="k">本番<span class="tag hot">採点あり</span></div>
+        <div class="d">毎回ちがう並び。最後に<b>「何円もらえるならやりたいか」</b>を聞きます。</div>
+      </button>
+      <button class="box boxbtn" data-go="shindan">
+        <div class="k">診断だけ</div>
+        <div class="d">1-back と 4-back を体験ずみの人向け。金額の診断だけをやります。</div>
+      </button>
     </div>
   </div>
 
-  <div class="foot">
-    <button class="btn ghost" id="shindanBtn">診断だけする</button>
+  <!-- 練習：レベル選択 -->
+  <div id="pickPractice" style="display:none">
+    <div style="font-size:18px;font-weight:700;margin-bottom:12px">練習 ： どっちをやる？</div>
+    <div class="picks">
+      <button class="pick" data-mode="practice" data-n="1">1-back<small>1個前</small></button>
+      <button class="pick" data-mode="practice" data-n="4">4-back<small>4個前</small></button>
+    </div>
+    <div class="foot"><button class="btn ghost" data-back>もどる</button></div>
+  </div>
+
+  <!-- 本番：テンポ＋レベル選択 -->
+  <div id="pickReal" style="display:none">
+    <div style="font-size:18px;font-weight:700;margin-bottom:12px">本番 ： どっちをやる？</div>
+    <div class="tempo">
+      <button class="tbtn on" data-t="demo">デモ</button>
+      <button class="tbtn" data-t="paper">論文通り</button>
+    </div>
+    <div class="tlab" style="margin:2px 0 12px;font-weight:400"><b>デモ 12問</b>／<b>論文通り 64問</b></div>
+    <div class="picks">
+      <button class="pick" data-mode="real" data-n="1">1-back<small>1個前</small></button>
+      <button class="pick" data-mode="real" data-n="4">4-back<small>4個前</small></button>
+    </div>
+    <div class="foot"><button class="btn ghost" data-back>もどる</button></div>
   </div>
 
   <p class="src">
@@ -408,7 +421,7 @@
    ========================================================= */
 const $ = id => document.getElementById(id);
 const SECTIONS = ["home","practice","run","result","shindan"];
-function show(id){ SECTIONS.forEach(s => $(s).classList.toggle("show", s === id)); window.scrollTo(0,0); }
+function show(id){ SECTIONS.forEach(s => $(s).classList.toggle("show", s === id)); window.scrollTo(0,0); if (id === "home") homeView("top"); }
 
 const TEMPO = {                       // テンポは論文固定：1文字1.5秒＋間3.5秒。ちがうのは長さだけ
   demo:  {show:1500, blank:3500},
@@ -748,7 +761,19 @@ function shindanReset(){                          // step1 に戻し、滴定を
   $("sNo").style.display  = "none";
   $("sYes").style.display = "none";
 }
-$("shindanBtn").addEventListener("click", () => { aClear(); shindanReset(); show("shindan"); });
+function homeView(v){
+  $("homeTop").style.display      = (v === "top")      ? "block" : "none";
+  $("pickPractice").style.display = (v === "practice") ? "block" : "none";
+  $("pickReal").style.display     = (v === "real")     ? "block" : "none";
+}
+document.querySelectorAll(".boxbtn").forEach(b =>
+  b.addEventListener("click", () => {
+    const go = b.dataset.go;
+    if (go === "shindan"){ aClear(); shindanReset(); show("shindan"); }
+    else homeView(go);
+  }));
+document.querySelectorAll("[data-back]").forEach(b =>
+  b.addEventListener("click", () => homeView("top")));
 $("sNoBtn").addEventListener("click", () => { $("sQ").style.display = "none"; $("sNo").style.display = "block"; });
 $("sYesBtn").addEventListener("click", () => {
   $("sQ").style.display = "none";
