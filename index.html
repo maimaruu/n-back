@@ -248,31 +248,9 @@
 <!-- ==================== SHINDAN（診断）==================== -->
 <section id="shindan">
   <div class="eyebrow">診断</div>
-
-  <!-- step 1: 確認 -->
-  <div id="sQ">
-    <h1>1-back と 4-back を<span class="hl">体験しましたか？</span></h1>
-    <p class="lead">この診断は、両方をやったことがある前提です。</p>
-    <div class="foot">
-      <button class="btn red" id="sYesBtn">はい</button>
-      <button class="btn ghost" id="sNoBtn">いいえ</button>
-    </div>
-  </div>
-
-  <!-- step 2: いいえ -->
-  <div id="sNo" style="display:none">
-    <p class="lead" style="font-size:16px">1-back と 4-back をやってから診断してください。</p>
-    <div class="foot">
-      <button class="btn ghost" id="sNoBack">もどる</button>
-    </div>
-  </div>
-
-  <!-- step 3: はい → 滴定（#priceBox がここに移動してくる） -->
-  <div id="sYes" style="display:none">
-    <div id="sYesSlot"></div>
-    <div class="foot">
-      <button class="btn ghost" id="sYesBack">もどる</button>
-    </div>
+  <div id="sYesSlot"></div>       <!-- #priceBox（滴定）がここに移動してくる -->
+  <div class="foot">
+    <button class="btn ghost" id="sYesBack">もどる</button>
   </div>
 </section>
 
@@ -347,7 +325,7 @@
     <h3>もう一回やるなら、いくらほしい？</h3>
     <p class="q">
       実験の参加者も、これを本当に聞かれました。<br>
-      <b>「4-back で 300円」</b> と <b>「1-back で ◯円」</b>、どっちを選ぶ？<br>
+      <b>「4個前 で 300円」</b> と <b>「1個前 で ◯円」</b>、どっちを選ぶ？<br>
       同じ質問を、金額を変えて数回くり返します。深く考えず、直感で回答してください。
     </p>
 
@@ -362,13 +340,13 @@
     <div class="deal" id="tDeal">
       <button class="opt tpick" id="pickHard" style="border-color:#FF5A4C">
         <div class="lv" style="color:#FF5A4C"><span class="cdot" style="background:#FF5A4C"></span>赤</div>
-        <div class="sub">（4-back）もう一回</div>
+        <div class="sub">（4個前）もう一回</div>
         <div class="amt">300円</div>
       </button>
       <div class="vs">or</div>
       <button class="opt var tpick" id="pickEasy" style="border-color:#0FA3A0">
         <div class="lv" style="color:#0FA3A0"><span class="cdot" style="background:#0FA3A0"></span>緑</div>
-        <div class="sub">（1-back）もう一回</div>
+        <div class="sub">（1個前）もう一回</div>
         <div class="amt" style="color:#0FA3A0"><span id="easyAmt">150</span>円</div>
       </button>
     </div>
@@ -376,21 +354,21 @@
     <div id="tResult" style="display:none">
       <div class="ex">
         <div class="h">あなたの境目</div>
-        「4-back で 300円」と「1-back で <b><span id="ipVal">—</span>円</b>」が、
+        「4個前 で 300円」と「1個前 で <b><span id="ipVal">—</span>円</b>」が、
         あなたにとって<b>ほぼ同じ価値</b>でした。
       </div>
 
       <button class="btn red" id="revealBtn" style="margin-top:14px">回答をみる</button>
 
       <div id="reveal">
-        「4-back で 300円」もらう体験は、あなたにとって
-        <b><span id="svVal">—</span>円</b>ぶんの値打ちしかなかった、ということ（＝4-back の<b>主観的価値</b>）。<br><br>
+        「4個前 で 300円」もらう体験は、あなたにとって
+        <b><span id="svVal">—</span>円</b>ぶんの値打ちしかなかった、ということ（＝4個前 の<b>主観的価値</b>）。<br><br>
         だから <b>しんどさの値段 ＝ 300 − <span id="svVal2">—</span> ＝ <span id="costVal">—</span>円</b>。<br>
-        4-back を避けるために、300円のうち <b><span id="costVal2">—</span>円</b> を捨ててもいい、と感じたわけです。
+        4個前 を避けるために、300円のうち <b><span id="costVal2">—</span>円</b> を捨ててもいい、と感じたわけです。
         <span class="note">
           ※ 参加者の境目は平均 約150円（＝しんどさ 約150円）。高齢者（63〜88歳）は約60円（＝しんどさ 約240円）。<br>
           ※ 本物の実験は 1-back を基準に <b>2・3・4・5・6-back の5段階</b>を各6回・<b>計30回</b>選ばせます（<b>若年成人の場合</b>。高齢者は 2–4-back の3段階×6＝18回）。このツールは <b>1 vs 4 の1組だけ</b>を取り出した簡易版です。<br>
-          ※ 本物はこの選択画面でレベルを<b>「色」だけ</b>で呼び、「4」「1」の数字を見せません。数字に引っ張られる（アンカリング）のを避けるためです。このデモは教材も兼ねるので小さく数字も併記しています。<br>
+          ※ 本物はこの選択画面でレベルを<b>「色」だけ</b>で呼び、「4」「1」の数字を見せません。数字に引っ張られる（アンカリング）のを避けるためです。<br>
           ※ 原論文は $2.00 基準（若年成人 $0.98 / 高齢者 $0.40）。1ドル150円で換算。金額は人によって大きくちがいます。
         </span>
       </div>
@@ -755,12 +733,14 @@ $("pBack").addEventListener("click", () => { aClear(); show("home"); });
 /* 診断：滴定ブロックは #priceHome（結果画面）と #sYesSlot（診断）で1個を貸し借り */
 $("priceHome").appendChild($("priceBox"));       // 起動時に定位置へ
 
-function shindanReset(){                          // step1 に戻し、滴定を定位置へ返す
-  $("priceHome").appendChild($("priceBox"));
-  $("sQ").style.display   = "block";
-  $("sNo").style.display  = "none";
-  $("sYes").style.display = "none";
+function enterShindan(){                          // 診断＝いきなり滴定を出す
+  aClear();
+  $("sYesSlot").appendChild($("priceBox"));       // 滴定を診断側へ借りてくる
+  $("priceBox").style.display = "block";
+  titrReset();
+  show("shindan");
 }
+function returnPrice(){ $("priceHome").appendChild($("priceBox")); }   // 滴定を定位置へ返す
 function homeView(v){
   $("homeTop").style.display      = (v === "top")      ? "block" : "none";
   $("pickPractice").style.display = (v === "practice") ? "block" : "none";
@@ -769,21 +749,15 @@ function homeView(v){
 document.querySelectorAll(".boxbtn").forEach(b =>
   b.addEventListener("click", () => {
     const go = b.dataset.go;
-    if (go === "shindan"){ aClear(); shindanReset(); show("shindan"); }
+    if (go === "shindan"){ enterShindan(); }
     else homeView(go);
   }));
 document.querySelectorAll("[data-back]").forEach(b =>
   b.addEventListener("click", () => homeView("top")));
-$("sNoBtn").addEventListener("click", () => { $("sQ").style.display = "none"; $("sNo").style.display = "block"; });
-$("sYesBtn").addEventListener("click", () => {
-  $("sQ").style.display = "none";
-  $("sYesSlot").appendChild($("priceBox"));      // 滴定を診断側へ借りてくる
-  $("priceBox").style.display = "block";
-  titrReset();
-  $("sYes").style.display = "block";
-});
-function leaveShindan(){ shindanReset(); show(DIAG_ONLY ? "shindan" : "home"); }
-$("sNoBack").addEventListener("click", leaveShindan);
+function leaveShindan(){                          // もどる
+  if (DIAG_ONLY){ enterShindan(); return; }        // 診断モードは最初からやり直し
+  returnPrice(); show("home");
+}
 $("sYesBack").addEventListener("click", leaveShindan);
 
 $("sameBtn").addEventListener("click", respond);
@@ -805,7 +779,7 @@ $("revealBtn").addEventListener("click", () => { $("reveal").style.display = "bl
 
 /* QR（?diag 付きURL）から開いたら、診断だけを表示する。練習・本番には入れない */
 const DIAG_ONLY = new URLSearchParams(location.search).has("diag");
-if (DIAG_ONLY){ shindanReset(); show("shindan"); }
+if (DIAG_ONLY){ enterShindan(); }
 </script>
 </body>
 </html>
